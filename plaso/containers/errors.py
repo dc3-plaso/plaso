@@ -34,4 +34,4 @@ class ExtractionError(interface.AttributeContainer):
     self.path_spec = path_spec
     self.level = level
     self.filename = filename
-    self.line_number = None
+    self.line_number = line_number

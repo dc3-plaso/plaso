@@ -114,7 +114,7 @@ class SQLitePlugin(plugins.BasePlugin):
     if database is None:
       raise ValueError(u'Database is not set.')
 
-    if not frozenset(database.tables) >= self.REQUIRED_TABLES:
+    if frozenset(database.tables) < self.REQUIRED_TABLES:
       raise errors.WrongPlugin(
           u'Not the correct database tables for: {0:s}'.format(self.NAME))
 

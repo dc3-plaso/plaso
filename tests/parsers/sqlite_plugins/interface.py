@@ -10,6 +10,7 @@ from tests.parsers.sqlite_plugins import test_lib
 
 
 class BogusSQLitePlugin(interface.SQLitePlugin):
+  """Convenience class for Bogus sqlite plugin."""
 
   NAME = u'bogus'
 
@@ -20,17 +21,12 @@ class BogusSQLitePlugin(interface.SQLitePlugin):
   def __init__(self):
     self.results = []
 
-  def ParseMyTableRow(
-      self, parser_mediator, row, query=None, cache=None, database=None,
-      **unused_kwargs):
+  def ParseMyTableRow(self, parser_mediator, row, **unused_kwargs):
     """Parses a MyTable row.
 
     Args:
       parser_mediator: A parser mediator object (instance of ParserMediator).
       row: The row resulting from the query.
-      query: Optional query string. The default is None.
-      cache: A cache object (instance of SQLiteCache).
-      database: A database object (instance of SQLiteDatabase).
     """
     from_wal = parser_mediator.GetFileEntry().path_spec.location.endswith(
         u'-wal')
@@ -91,3 +87,4 @@ class SQLiteInterfaceTest(test_lib.SQLitePluginTestCase):
 
 if __name__ == '__main__':
   unittest.main()
+

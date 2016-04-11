@@ -456,8 +456,8 @@ class ParserMediator(object):
         display_name = self.GetDisplayName()
       except ValueError:
         display_name = u''
-      logging.log(level,
-          u'[{0:s}] error parsing file: {1:s} with error: {2:s}'.format(
+      logging.log(
+          level, u'[{0:s}] error parsing file: {1:s} with error: {2:s}'.format(
               self.GetParserChain(), display_name, message))
     else:
       # Get info from who called this function.
