@@ -37,8 +37,7 @@ class ParserMediator(object):
     self._filter_object = None
     self._knowledge_base = knowledge_base
     self._mount_path = None
-    # TODO: parse error producer set to None as long as nothing is listening.
-    self._parse_error_queue_producer = None
+    self._parse_error_queue_producer = parse_error_queue_producer
     self._parser_chain_components = []
     self._text_prepend = None
 
@@ -447,6 +446,9 @@ class ParserMediator(object):
       level: The logging level to set.
       caller_level: The number levels up the call stack the caller is located.
     """
+    # TODO: Remove this line of code when there is a parse error consumer.
+    self._parse_error_queue_producer = None
+
     if not level:
       level = logging.INFO
 
@@ -469,7 +471,6 @@ class ParserMediator(object):
           parser_chain, message, path_spec=path_spec, level=level,
           filename=caller.filename, line_number=caller.lineno)
       self._parse_error_queue_producer.ProduceItem(parse_error)
-      self.number_of_parse_errors += 1
 
   def ProduceParseWarning(self, message):
     """Produces a parse warning log.
