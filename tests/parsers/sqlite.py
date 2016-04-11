@@ -56,6 +56,59 @@ class SQLiteParserTest(test_lib.ParserTestCase):
       chain = event.parser
       self.assertEqual(1, chain.count(u'/'))
 
+  def testQueryDatabaseWithoutWAL(self):
+    """Tests querying a database without the WAL file."""
+    database_file = self._GetTestFilePath([u'wal_database.db'])
+
+    database = sqlite.SQLiteDatabase(u'wal_database.db')
+    with open(database_file, u'rb') as database_file_object:
+      database.Open(database_file_object)
+
+    row_results = []
+    for row in database.Query(u'SELECT * FROM MyTable'):
+      row_results.append((row['Field1'], row['Field2']))
+
+    expected_row_results = [
+        (u'Committed Text 1', 1),
+        (u'Committed Text 2', 2),
+        (u'Deleted Text 1', 3),
+        (u'Committed Text 3', 4),
+        (u'Committed Text 4', 5),
+        (u'Deleted Text 2', 6),
+        (u'Committed Text 5', 7),
+        (u'Committed Text 6', 8),
+        (u'Committed Text 7', 9)]
+
+    self.assertEqual(expected_row_results, row_results)
+
+  def testQueryDatabaseWithWAL(self):
+    """Tests querying a database with the WAL file."""
+    database_file = self._GetTestFilePath([u'wal_database.db'])
+    wal_file = self._GetTestFilePath([u'wal_database.db-wal'])
+
+    database = sqlite.SQLiteDatabase(u'wal_database.db')
+    with open(database_file, u'rb') as database_file_object:
+      with open(wal_file, u'rb') as wal_file_object:
+        database.Open(database_file_object, wal_file_object=wal_file_object)
+
+    row_results = []
+    for row in database.Query(u'SELECT * FROM MyTable'):
+      row_results.append((row['Field1'], row['Field2']))
+
+    expected_row_results = [
+        (u'Committed Text 1', 1),
+        (u'Committed Text 2', 2),
+        (u'Modified Committed Text 3', 4),
+        (u'Committed Text 4', 5),
+        (u'Committed Text 5', 7),
+        (u'Committed Text 6', 8),
+        (u'Committed Text 7', 9),
+        (u'New Text 1', 10),
+        (u'New Text 2', 11),
+        (u'New Text 3', 12)]
+
+    self.assertEqual(expected_row_results, row_results)
+
 
 if __name__ == '__main__':
   unittest.main()

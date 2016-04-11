@@ -27,13 +27,18 @@ class SQLitePlugin(plugins.BasePlugin):
   REQUIRED_TABLES = frozenset([])
 
   def GetEntries(
-      self, parser_mediator, cache=None, database=None, **unused_kwargs):
+      self, parser_mediator, cache=None, database=None, database_wal=None,
+      wal_file_entry=None, **unused_kwargs):
     """Extracts event objects from a SQLite database.
 
     Args:
       parser_mediator: A parser mediator object (instance of ParserMediator).
       cache: A SQLiteCache object.
       database: A database object (instance of SQLiteDatabase).
+      database_wal: A database object with WAL file commited
+                    (instance of SQLiteDatabase).
+      wal_file_entry: A file entry for the database with committed WAL file
+                      (instance of dfvfs.FileEntry).
     """
     for query, callback_method in self.QUERIES:
       try:
@@ -45,18 +50,44 @@ class SQLitePlugin(plugins.BasePlugin):
           continue
 
         sql_results = database.Query(query)
-        row = sql_results.fetchone()
+        if database_wal:
+          wal_sql_results = database_wal.Query(query)
+        else:
+          wal_sql_results = None
 
-        while row:
-          callback(
-              parser_mediator, row, query=query, cache=cache, database=database)
+        # Process database with WAL file.
+        if database_wal and wal_sql_results:
+          row_cache = set()
+          for row in sql_results:
+            callback(
+                parser_mediator, row, query=query, cache=cache,
+                database=database)
+            row_cache.add(row)
 
-          row = sql_results.fetchone()
+          # Process unique rows in WAL file.
+          file_entry = parser_mediator.GetFileEntry()
+          parser_mediator.SetFileEntry(wal_file_entry)
+          for row in wal_sql_results:
+            if row not in row_cache:
+              callback(
+                  parser_mediator, row, query=query, cache=cache,
+                  database=database_wal)
+          parser_mediator.SetFileEntry(file_entry)
+
+        # Process database without WAL file.
+        else:
+          for row in sql_results:
+            callback(
+                parser_mediator, row, query=query, cache=cache,
+                database=database)
 
       except sqlite3.DatabaseError as exception:
-        logging.debug(u'SQLite error occurred: {0:s}'.format(exception))
+        parser_mediator.ProduceParseDebug(
+            u'SQLite error occurred: {0:s}'.format(exception))
 
-  def Process(self, parser_mediator, cache=None, database=None, **kwargs):
+  def Process(
+      self, parser_mediator, cache=None, database=None, database_wal=None,
+      wal_file_entry=None, **kwargs):
     """Determine if this is the right plugin for this database.
 
     This function takes a SQLiteDatabase object and compares the list
@@ -70,6 +101,10 @@ class SQLitePlugin(plugins.BasePlugin):
       parser_mediator: A parser mediator object (instance of ParserMediator).
       cache: A SQLiteCache object.
       database: A database object (instance of SQLiteDatabase).
+      database_wal: A database object with WAL file commited
+                    (instance of SQLiteDatabase).
+      wal_file_entry: A file entry for the database with committed WAL file
+                      (instance of dfvfs.FileEntry).
 
     Raises:
       errors.WrongPlugin: If the database does not contain all the tables
@@ -86,4 +121,6 @@ class SQLitePlugin(plugins.BasePlugin):
     # This will raise if unhandled keyword arguments are passed.
     super(SQLitePlugin, self).Process(parser_mediator)
 
-    self.GetEntries(parser_mediator, cache=cache, database=database)
+    self.GetEntries(
+        parser_mediator, cache=cache, database=database,
+        database_wal=database_wal, wal_file_entry=wal_file_entry)
