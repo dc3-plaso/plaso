@@ -27,6 +27,26 @@ class SQLitePlugin(plugins.BasePlugin):
   # List of tables that should be present in the database, for verification.
   REQUIRED_TABLES = frozenset([])
 
+  @staticmethod
+  def _HashSQLiteRow(row):
+    """Hashes the given SQLite row.
+
+    Args:
+      row: A SQLite Row object (instance of sqlite3.Row)
+
+    Returns:
+      The hash value of the given row.
+    """
+    hash_value = 0
+    for column_value in row:
+      try:
+        hash_value ^= hash(column_value)
+      # Blobs are buffers and will cause a "writable buffers are not hashable"
+      # error if we try to hash it. Therefore, we will turn it into str.
+      except TypeError:
+        hash_value ^= hash(str(column_value))
+    return hash_value
+
   def GetEntries(
       self, parser_mediator, cache=None, database=None, database_wal=None,
       wal_file_entry=None, **unused_kwargs):
@@ -63,13 +83,13 @@ class SQLitePlugin(plugins.BasePlugin):
             callback(
                 parser_mediator, row, query=query, cache=cache,
                 database=database)
-            row_cache.add(row)
+            row_cache.add(self._HashSQLiteRow(row))
 
           # Process unique rows in WAL file.
           file_entry = parser_mediator.GetFileEntry()
           parser_mediator.SetFileEntry(wal_file_entry)
           for row in wal_sql_results:
-            if row not in row_cache:
+            if self._HashSQLiteRow(row) not in row_cache:
               callback(
                   parser_mediator, row, query=query, cache=cache,
                   database=database_wal)
@@ -83,7 +103,7 @@ class SQLitePlugin(plugins.BasePlugin):
                 database=database)
 
       except sqlite3.DatabaseError as exception:
-        parser_mediator.ProduceParseDebug(
+        logging.debug(
             u'SQLite error occurred: {0:s}'.format(exception))
 
   def Process(
@@ -102,7 +122,7 @@ class SQLitePlugin(plugins.BasePlugin):
       parser_mediator: A parser mediator object (instance of ParserMediator).
       cache: A SQLiteCache object.
       database: A database object (instance of SQLiteDatabase).
-      database_wal: A database object with WAL file commited
+      database_wal: A database object with WAL file committed
                     (instance of SQLiteDatabase).
       wal_file_entry: A file entry for the database with committed WAL file
                       (instance of dfvfs.FileEntry).

@@ -2,13 +2,11 @@
 """The parser mediator object."""
 
 import datetime
-import inspect
 import logging
 import os
 
 from dfvfs.lib import definitions as dfvfs_definitions
 
-from plaso.containers import errors
 from plaso.lib import py2to3
 from plaso.lib import timelib
 
@@ -414,71 +412,26 @@ class ParserMediator(object):
     for event_object in event_objects:
       self.ProduceEvent(event_object, query=query)
 
-  def ProduceParseDebug(self, message):
-    """Produces a parse debug log.
-
-    Args:
-      message: The message of the debug log.
-    """
-    self.ProduceParseLog(message, level=logging.DEBUG, caller_level=2)
-
   def ProduceParseError(self, message):
     """Produces a parse error.
 
     Args:
       message: The message of the error.
     """
-    self.ProduceParseLog(message, level=logging.ERROR, caller_level=2)
-
-  def ProduceParseInfo(self, message):
-    """Produces a parse info log.
-
-    Args:
-      message: The message of the info log.
-    """
-    self.ProduceParseLog(message, level=logging.INFO, caller_level=2)
-
-  def ProduceParseLog(self, message, level=None, caller_level=1):
-    """Produces a parse error.
-
-    Args:
-      message: The message of the error.
-      level: The logging level to set.
-      caller_level: The number levels up the call stack the caller is located.
-    """
-    # TODO: Remove this line of code when there is a parse error consumer.
-    self._parse_error_queue_producer = None
-
-    if not level:
-      level = logging.INFO
-
     self.number_of_parse_errors += 1
-    if not self._parse_error_queue_producer:
-      try:
-        display_name = self.GetDisplayName()
-      except ValueError:
-        display_name = u''
-      logging.log(
-          level, u'[{0:s}] error parsing file: {1:s} with error: {2:s}'.format(
-              self.GetParserChain(), display_name, message))
-    else:
-      # Get info from who called this function.
-      caller = inspect.getframeinfo(inspect.stack()[caller_level][0])
+    # TODO: Remove call to logging when parser error queue is fully functional.
+    logging.error(
+        u'[{0:s}] unable to parse file: {1:s} with error: {2:s}'.format(
+            self.GetParserChain(), self.GetDisplayName(), message))
 
-      path_spec = self._file_entry.path_spec
-      parser_chain = self.GetParserChain()
-      parse_error = errors.ExtractionError(
-          parser_chain, message, path_spec=path_spec, level=level,
-          filename=caller.filename, line_number=caller.lineno)
-      self._parse_error_queue_producer.ProduceItem(parse_error)
-
-  def ProduceParseWarning(self, message):
-    """Produces a parse warning log.
-
-    Args:
-      message: The message of the warning log.
-    """
-    self.ProduceParseLog(message, level=logging.WARNING, caller_level=2)
+    # TODO: disabled as long nothing is listening on the parse error queue.
+    # if self._parse_error_queue_producer:
+    #   path_spec = self._file_entry.path_spec
+    #   parser_chain = self.GetParserChain()
+    #   parse_error = event.ExtractionError(
+    #       parser_chain, message, path_spec=path_spec)
+    #   self._parse_error_queue_producer.ProduceItem(parse_error)
+    #   self.number_of_parse_errors += 1
 
   def ResetCounters(self):
     """Resets the counters."""

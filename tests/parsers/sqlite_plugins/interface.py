@@ -14,7 +14,8 @@ class BogusSQLitePlugin(interface.SQLitePlugin):
 
   NAME = u'bogus'
 
-  QUERIES = [(u'SELECT Field1, Field2 FROM MyTable', u'ParseMyTableRow')]
+  QUERIES = [(
+      u'SELECT Field1, Field2, Field3 FROM MyTable', u'ParseMyTableRow')]
 
   REQUIRED_TABLES = frozenset([u'MyTable'])
 
@@ -30,7 +31,8 @@ class BogusSQLitePlugin(interface.SQLitePlugin):
     """
     from_wal = parser_mediator.GetFileEntry().path_spec.location.endswith(
         u'-wal')
-    self.results.append(((row['Field1'], row['Field2']), from_wal))
+    self.results.append((
+        (row['Field1'], row['Field2'], str(row['Field3'])), from_wal))
 
 
 class SQLiteInterfaceTest(test_lib.SQLitePluginTestCase):
@@ -47,19 +49,20 @@ class SQLiteInterfaceTest(test_lib.SQLitePluginTestCase):
         bogus_plugin, database_file, cache=cache, wal_path=wal_file)
 
     expected_results = [
-        ((u'Committed Text 1', 1), False),
-        ((u'Committed Text 2', 2), False),
-        ((u'Deleted Text 1', 3), False),
-        ((u'Committed Text 3', 4), False),
-        ((u'Committed Text 4', 5), False),
-        ((u'Deleted Text 2', 6), False),
-        ((u'Committed Text 5', 7), False),
-        ((u'Committed Text 6', 8), False),
-        ((u'Committed Text 7', 9), False),
-        ((u'Modified Committed Text 3', 4), True),
-        ((u'New Text 1', 10), True),
-        ((u'New Text 2', 11), True),
-        ((u'New Text 3', 12), True)]
+        ((u'Committed Text 1', 1, b'None'), False),
+        ((u'Committed Text 2', 2, b'None'), False),
+        ((u'Deleted Text 1', 3, b'None'), False),
+        ((u'Committed Text 3', 4, b'None'), False),
+        ((u'Committed Text 4', 5, b'None'), False),
+        ((u'Deleted Text 2', 6, b'None'), False),
+        ((u'Committed Text 5', 7, b'None'), False),
+        ((u'Committed Text 6', 8, b'None'), False),
+        ((u'Committed Text 7', 9, b'None'), False),
+        ((u'Unhashable Row 1', 10, b'Binary Text!\x01\x02\x03'), False),
+        ((u'Modified Committed Text 3', 4, b'None'), True),
+        ((u'Unhashable Row 2', 11, b'More Binary Text!\x01\x02\x03'), True),
+        ((u'New Text 1', 12, b'None'), True),
+        ((u'New Text 2', 13, b'None'), True)]
 
     self.assertEqual(expected_results, bogus_plugin.results)
 
@@ -72,19 +75,19 @@ class SQLiteInterfaceTest(test_lib.SQLitePluginTestCase):
     self._ParseDatabaseFileWithPlugin(bogus_plugin, database_file, cache=cache)
 
     expected_results = [
-        ((u'Committed Text 1', 1), False),
-        ((u'Committed Text 2', 2), False),
-        ((u'Deleted Text 1', 3), False),
-        ((u'Committed Text 3', 4), False),
-        ((u'Committed Text 4', 5), False),
-        ((u'Deleted Text 2', 6), False),
-        ((u'Committed Text 5', 7), False),
-        ((u'Committed Text 6', 8), False),
-        ((u'Committed Text 7', 9), False)]
+        ((u'Committed Text 1', 1, b'None'), False),
+        ((u'Committed Text 2', 2, b'None'), False),
+        ((u'Deleted Text 1', 3, b'None'), False),
+        ((u'Committed Text 3', 4, b'None'), False),
+        ((u'Committed Text 4', 5, b'None'), False),
+        ((u'Deleted Text 2', 6, b'None'), False),
+        ((u'Committed Text 5', 7, b'None'), False),
+        ((u'Committed Text 6', 8, b'None'), False),
+        ((u'Committed Text 7', 9, b'None'), False),
+        ((u'Unhashable Row 1', 10, b'Binary Text!\x01\x02\x03'), False)]
 
     self.assertEqual(expected_results, bogus_plugin.results)
 
 
 if __name__ == '__main__':
   unittest.main()
-
