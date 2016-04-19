@@ -7,6 +7,8 @@ import os
 
 from dfvfs.lib import definitions as dfvfs_definitions
 
+# TODO: disabled as long nothing is listening on the parse error queue.
+# from plaso.lib import event
 from plaso.lib import py2to3
 from plaso.lib import timelib
 
