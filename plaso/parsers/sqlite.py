@@ -344,6 +344,13 @@ class SQLiteParser(interface.FileEntryParser):
     try:
       database.Open(file_object)
 
+      # Seek file_object to 0 so we can re-open the database with WAL file.
+      file_object.seek(0)
+
+      # Open second database with WAL file if available.
+      database_wal, wal_file_entry = self._GetDatabaseWithWAL(
+          file_entry, file_object, filename)
+
     except (IOError, ValueError) as exception:
       raise errors.UnableToParseFile(
           u'Unable to open database with error: {0:s}'.format(
@@ -354,11 +361,8 @@ class SQLiteParser(interface.FileEntryParser):
           u'Unable to parse SQLite database with error: {0:s}.'.format(
               exception))
 
-    # Open second database with WAL file if available.
-    # Seek file_object to 0 so we can re-open the database with WAL file.
-    file_object.seek(0)
-    database_wal, wal_file_entry = self._GetDatabaseWithWAL(
-        file_entry, file_object, filename)
+    finally:
+      file_object.close()
 
     # Create a cache in which the resulting tables are cached.
     cache = SQLiteCache()
