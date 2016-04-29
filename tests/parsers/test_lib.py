@@ -221,7 +221,7 @@ class ParserTestCase(unittest.TestCase):
 
     else:
       self.fail(
-          u'Got unexpected parser type: {0:s}'.format(type(parser_object))
+          u'Got unexpected parser type: {0:s}'.format(type(parser_object)))
 
     return event_queue_consumer
 
