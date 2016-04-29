@@ -328,7 +328,7 @@ class SQLiteParser(interface.FileEntryParser):
     format_specification.AddNewSignature(b'SQLite format 3', offset=0)
     return format_specification
 
-  def ParseFileObject(self, parser_mediator, file_entry, **kwargs):
+  def ParseFileEntry(self, parser_mediator, file_entry, **kwargs):
     """Parses a SQLite database file-like object.
 
     Args:
