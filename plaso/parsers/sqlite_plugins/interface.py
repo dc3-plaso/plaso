@@ -10,6 +10,7 @@ except ImportError:
   import sqlite3
 
 from plaso.lib import errors
+from plaso.lib import utils
 from plaso.parsers import plugins
 
 
@@ -39,12 +40,11 @@ class SQLitePlugin(plugins.BasePlugin):
     """
     hash_value = 0
     for column_value in row:
-      try:
-        hash_value ^= hash(column_value)
       # Blobs are buffers and will cause a "writable buffers are not hashable"
-      # error if we try to hash it. Therefore, we will turn it into str.
-      except TypeError:
-        hash_value ^= hash(str(column_value))
+      # error if we try to hash it. Therefore, we will turn it into unicode.
+      if isinstance(column_value, buffer):
+        column_value = utils.GetUnicodeString(column_value)
+      hash_value ^= hash(column_value)
     return hash_value
 
   def GetEntries(
@@ -56,10 +56,10 @@ class SQLitePlugin(plugins.BasePlugin):
       parser_mediator: A parser mediator object (instance of ParserMediator).
       cache: A SQLiteCache object.
       database: A database object (instance of SQLiteDatabase).
-      database_wal: A database object with WAL file commited
+      database_wal: Optional database object with WAL file commited
                     (instance of SQLiteDatabase).
-      wal_file_entry: A file entry for the database with committed WAL file
-                      (instance of dfvfs.FileEntry).
+      wal_file_entry: Optional file entry for the database with committed WAL
+                      file (instance of dfvfs.FileEntry).
     """
     for query, callback_method in self.QUERIES:
       try:
@@ -122,10 +122,10 @@ class SQLitePlugin(plugins.BasePlugin):
       parser_mediator: A parser mediator object (instance of ParserMediator).
       cache: A SQLiteCache object.
       database: A database object (instance of SQLiteDatabase).
-      database_wal: A database object with WAL file committed
+      database_wal: Optional database object with WAL file committed
                     (instance of SQLiteDatabase).
-      wal_file_entry: A file entry for the database with committed WAL file
-                      (instance of dfvfs.FileEntry).
+      wal_file_entry: Optional file entry for the database with committed WAL
+                      file (instance of dfvfs.FileEntry).
 
     Raises:
       errors.WrongPlugin: If the database does not contain all the tables

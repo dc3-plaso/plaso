@@ -9,6 +9,8 @@ from plaso.lib import py2to3
 def GetUnicodeString(string):
   """Converts the string to Unicode if necessary."""
   if not isinstance(string, py2to3.UNICODE_TYPE):
+    if py2to3.PYTHON2:
+      return unicode(string)
     return str(string).decode(u'utf8', errors=u'ignore')
   return string
 

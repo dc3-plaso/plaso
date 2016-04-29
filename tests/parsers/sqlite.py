@@ -4,6 +4,7 @@
 
 import unittest
 
+from plaso.lib import utils
 from plaso.parsers import sqlite
 # Register plugins.
 from plaso.parsers import sqlite_plugins  # pylint: disable=unused-import
@@ -57,18 +58,23 @@ class SQLiteParserTest(test_lib.ParserTestCase):
       self.assertEqual(1, chain.count(u'/'))
 
   def testQueryDatabaseWithWAL(self):
-    """Tests querying a database with the WAL file."""
+    """Tests the Query function on a database with a WAL file."""
     database_file = self._GetTestFilePath([u'wal_database.db'])
     wal_file = self._GetTestFilePath([u'wal_database.db-wal'])
 
     database = sqlite.SQLiteDatabase(u'wal_database.db')
-    with open(database_file, u'rb') as database_file_object:
-      with open(wal_file, u'rb') as wal_file_object:
+    with open(database_file, 'rb') as database_file_object:
+      with open(wal_file, 'rb') as wal_file_object:
         database.Open(database_file_object, wal_file_object=wal_file_object)
 
     row_results = []
     for row in database.Query(u'SELECT * FROM MyTable'):
-      row_results.append((row['Field1'], row['Field2'], str(row['Field3'])))
+      # Note that pysqlite does not accept a Unicode string in row['string'] and
+      # will raise "IndexError: Index must be int or string".
+      # Also, Field3 needs to be converted to unicode string because it it a
+      # buffer.
+      row_results.append((
+          row['Field1'], row['Field2'], utils.GetUnicodeString(row['Field3'])))
 
     expected_results = [
         (u'Committed Text 1', 1, b'None'),
@@ -86,7 +92,7 @@ class SQLiteParserTest(test_lib.ParserTestCase):
     self.assertEqual(expected_results, row_results)
 
   def testQueryDatabaseWithoutWAL(self):
-    """Tests querying a database without the WAL file."""
+    """Tests the Query function on a database without a WAL file."""
     database_file = self._GetTestFilePath([u'wal_database.db'])
 
     database = sqlite.SQLiteDatabase(u'wal_database.db')
@@ -95,7 +101,12 @@ class SQLiteParserTest(test_lib.ParserTestCase):
 
     row_results = []
     for row in database.Query(u'SELECT * FROM MyTable'):
-      row_results.append((row['Field1'], row['Field2'], str(row['Field3'])))
+      # Note that pysqlite does not accept a Unicode string in row['string'] and
+      # will raise "IndexError: Index must be int or string".
+      # Also, Field3 needs to be converted to unicode string because it it a
+      # buffer.
+      row_results.append((
+          row['Field1'], row['Field2'], utils.GetUnicodeString(row['Field3'])))
 
     expected_results = [
         (u'Committed Text 1', 1, b'None'),

@@ -1,9 +1,10 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-"""Tets for the SQLite plugin interface."""
+"""Tests for the SQLite plugin interface."""
 
 import unittest
 
+from plaso.lib import utils
 from plaso.parsers import sqlite
 from plaso.parsers.sqlite_plugins import interface
 from tests.parsers.sqlite_plugins import test_lib
@@ -20,6 +21,8 @@ class BogusSQLitePlugin(interface.SQLitePlugin):
   REQUIRED_TABLES = frozenset([u'MyTable'])
 
   def __init__(self):
+    """Initializes SQLite plugin."""
+    super(BogusSQLitePlugin, self).__init__()
     self.results = []
 
   def ParseMyTableRow(self, parser_mediator, row, **unused_kwargs):
@@ -29,17 +32,24 @@ class BogusSQLitePlugin(interface.SQLitePlugin):
       parser_mediator: A parser mediator object (instance of ParserMediator).
       row: The row resulting from the query.
     """
-    from_wal = parser_mediator.GetFileEntry().path_spec.location.endswith(
-        u'-wal')
+    file_entry = parser_mediator.GetFileEntry()
+    path_spec = file_entry.path_spec
+    location = path_spec.location
+    from_wal = location.endswith(u'-wal')
+    # Note that pysqlite does not accept a Unicode string in row['string'] and
+    # will raise "IndexError: Index must be int or string".
+    # Also, Field3 needs to be converted to unicode string because it it a
+    # buffer.
     self.results.append((
-        (row['Field1'], row['Field2'], str(row['Field3'])), from_wal))
+        (row['Field1'], row['Field2'], utils.GetUnicodeString(row['Field3'])),
+        from_wal))
 
 
 class SQLiteInterfaceTest(test_lib.SQLitePluginTestCase):
   """Tests for the SQLite plugin interface."""
 
   def testProcessWithWAL(self):
-    """Test the Process function on a database with WAL file."""
+    """Tests the Process function on a database with WAL file."""
     bogus_plugin = BogusSQLitePlugin()
     database_file = self._GetTestFilePath([u'wal_database.db'])
     wal_file = self._GetTestFilePath([u'wal_database.db-wal'])
@@ -67,7 +77,7 @@ class SQLiteInterfaceTest(test_lib.SQLitePluginTestCase):
     self.assertEqual(expected_results, bogus_plugin.results)
 
   def testProcessWithoutWAL(self):
-    """Test the Process function on a database without WAL file."""
+    """Tests the Process function on a database without WAL file."""
     bogus_plugin = BogusSQLitePlugin()
     database_file = self._GetTestFilePath([u'wal_database.db'])
 

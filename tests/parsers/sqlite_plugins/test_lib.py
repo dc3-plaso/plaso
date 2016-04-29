@@ -26,7 +26,7 @@ class SQLitePluginTestCase(test_lib.ParserTestCase):
       cache: A cache object (instance of SQLiteCache).
       knowledge_base_values: optional dict containing the knowledge base
                              values.
-      wal_path: The path to the SQLite WAL file.
+      wal_path: optional path to the SQLite WAL file.
 
     Returns:
       An event object queue consumer object (instance of
@@ -65,6 +65,7 @@ class SQLitePluginTestCase(test_lib.ParserTestCase):
       if wal_file_entry:
         database_wal = sqlite.SQLiteDatabase(file_entry.name)
         wal_file_object = wal_file_entry.GetFileObject()
+        # Seek file_object to 0 so we can re-open the database with WAL file.
         file_object.seek(0)
         try:
           database_wal.Open(file_object, wal_file_object=wal_file_object)
