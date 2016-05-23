@@ -7,15 +7,17 @@ import unittest
 
 from dfvfs.lib import definitions as dfvfs_definitions
 from dfvfs.path import factory as path_spec_factory
-from dfvfs.resolver import context
 
+from plaso.containers import sessions
 from plaso.engine import single_process
 from plaso.lib import errors
+from plaso.storage import fake_storage
 
+from tests import test_lib as shared_test_lib
 from tests.engine import test_lib
 
 
-class SingleProcessEngineTest(test_lib.EngineTestCase):
+class SingleProcessEngineTest(shared_test_lib.BaseTestCase):
   """Tests for the single process engine object."""
 
   # pylint: disable=protected-access
@@ -24,17 +26,6 @@ class SingleProcessEngineTest(test_lib.EngineTestCase):
     """Makes preparations before running an individual test."""
     self._test_engine = single_process.SingleProcessEngine(
         maximum_number_of_queued_items=100)
-
-  def testCreateCollector(self):
-    """Tests the _CreateCollector function."""
-    resolver_context = context.Context()
-
-    test_collector = self._test_engine._CreateCollector(
-        filter_find_specs=None, include_directory_stat=False,
-        resolver_context=resolver_context)
-    self.assertIsNotNone(test_collector)
-    self.assertIsInstance(
-        test_collector, single_process.SingleProcessCollector)
 
   def testCreateExtractionWorker(self):
     """Tests the _CreateExtractionWorker function."""
@@ -55,18 +46,20 @@ class SingleProcessEngineTest(test_lib.EngineTestCase):
 
     self._test_engine.PreprocessSources([source_path_spec])
 
-    parser_filter_string = u'filestat'
+    session_start = sessions.SessionStart()
 
-    storage_writer = test_lib.TestStorageWriter(
-        self._test_engine.event_object_queue)
+    storage_writer = fake_storage.FakeStorageWriter()
+    storage_writer.Open()
+    storage_writer.WriteSessionStart(session_start)
+
     self._test_engine.ProcessSources(
         [source_path_spec], storage_writer,
-        parser_filter_string=parser_filter_string)
+        parser_filter_expression=u'filestat')
 
     self.assertEqual(len(storage_writer.event_objects), 15)
 
 
-class SingleProcessQueueTest(unittest.TestCase):
+class SingleProcessQueueTest(shared_test_lib.BaseTestCase):
   """Tests the single process queue."""
 
   _ITEMS = frozenset([u'item1', u'item2', u'item3', u'item4'])

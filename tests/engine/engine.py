@@ -10,6 +10,7 @@ try:
 except ImportError:
   hpy = None
 
+from dfvfs.helpers import fake_file_system_builder
 from dfvfs.lib import definitions as dfvfs_definitions
 from dfvfs.path import factory as path_spec_factory
 from dfvfs.path import path_spec
@@ -17,13 +18,56 @@ from dfvfs.resolver import context
 from dfvfs.vfs import file_system
 
 from plaso.engine import engine
+from plaso.engine import plaso_queue
+from plaso.engine import single_process
+from plaso.storage import zip_file as storage_zip_file
 
 from tests import test_lib as shared_test_lib
-from tests.engine import test_lib
+
+
+class TestPathSpecQueueConsumer(plaso_queue.ItemQueueConsumer):
+  """Class that implements a test path specification queue consumer."""
+
+  def __init__(self, queue_object):
+    """Initializes the queue consumer.
+
+    Args:
+      queue_object: the queue object (instance of Queue).
+    """
+    super(TestPathSpecQueueConsumer, self).__init__(queue_object)
+    self.path_specs = []
+
+  def _ConsumeItem(self, path_spec_object, **unused_kwargs):
+    """Consumes an item callback for ConsumeItems.
+
+    Args:
+      path_spec_object: a path specification (instance of dfvfs.PathSpec).
+    """
+    self.path_specs.append(path_spec_object)
+
+  @property
+  def number_of_path_specs(self):
+    """The number of path specifications."""
+    return len(self.path_specs)
+
+  def GetFilePaths(self):
+    """Retrieves a list of file paths from the path specifications."""
+    file_paths = []
+    for path_spec_object in self.path_specs:
+      data_stream = getattr(path_spec_object, u'data_stream', None)
+      location = getattr(path_spec_object, u'location', None)
+      if location is not None:
+        if data_stream:
+          location = u'{0:s}:{1:s}'.format(location, data_stream)
+        file_paths.append(location)
+
+    return file_paths
 
 
 class TestEngine(engine.BaseEngine):
   """Class that defines the processing engine for testing."""
+
+  _TEST_DATA_PATH = os.path.join(os.getcwd(), u'test_data')
 
   def __init__(self, path_spec_queue, event_object_queue, parse_error_queue):
     """Initialize the engine object.
@@ -36,15 +80,30 @@ class TestEngine(engine.BaseEngine):
     super(TestEngine, self).__init__(
         path_spec_queue, event_object_queue, parse_error_queue)
 
-    file_system_builder = shared_test_lib.FakeFileSystemBuilder()
-    file_system_builder.AddTestFile(
-        u'/Windows/System32/config/SOFTWARE', [u'SOFTWARE'])
-    file_system_builder.AddTestFile(
-        u'/Windows/System32/config/SYSTEM', [u'SYSTEM'])
+    file_system_builder = fake_file_system_builder.FakeFileSystemBuilder()
+    test_file_path = self._GetTestFilePath([u'SOFTWARE'])
+    file_system_builder.AddFileReadData(
+        u'/Windows/System32/config/SOFTWARE', test_file_path)
+    test_file_path = self._GetTestFilePath([u'SYSTEM'])
+    file_system_builder.AddFileReadData(
+        u'/Windows/System32/config/SYSTEM', test_file_path)
 
     self._file_system = file_system_builder.file_system
     self._mount_point = path_spec_factory.Factory.NewPathSpec(
         dfvfs_definitions.TYPE_INDICATOR_FAKE, location=u'/')
+
+  def _GetTestFilePath(self, path_segments):
+    """Retrieves the path of a test file relative to the test data directory.
+
+    Args:
+      path_segments: the path segments inside the test data directory.
+
+    Returns:
+      A path of the test file.
+    """
+    # Note that we need to pass the individual path segments to os.path.join
+    # and not a list.
+    return os.path.join(self._TEST_DATA_PATH, *path_segments)
 
   def GetSourceFileSystem(self, source_path_spec, resolver_context=None):
     """Retrieves the file system of the source.
@@ -69,7 +128,7 @@ class TestEngine(engine.BaseEngine):
     return self._file_system, self._mount_point
 
 
-class BaseEngineTest(test_lib.EngineTestCase):
+class BaseEngineTest(shared_test_lib.BaseTestCase):
   """Tests for the engine object."""
 
   def testGetSourceFileSystem(self):
@@ -126,6 +185,37 @@ class BaseEngineTest(test_lib.EngineTestCase):
     expected_result = hpy is not None
     result = test_engine.SupportsMemoryProfiling()
     self.assertEqual(result, expected_result)
+
+
+class PathSpecQueueProducerTest(shared_test_lib.BaseTestCase):
+  """Tests for the path specification producer object."""
+
+  def testRun(self):
+    """Tests the Run function."""
+    test_file = self._GetTestFilePath([u'storage.json.plaso'])
+    storage_object = storage_zip_file.StorageFile(
+        test_file, read_only=True)
+
+    test_path_spec_queue = single_process.SingleProcessQueue()
+    test_collector = engine.PathSpecQueueProducer(
+        test_path_spec_queue, storage_object)
+    test_collector.Run()
+
+    test_collector_queue_consumer = TestPathSpecQueueConsumer(
+        test_path_spec_queue)
+    test_collector_queue_consumer.ConsumeItems()
+
+    self.assertEqual(test_collector_queue_consumer.number_of_path_specs, 2)
+
+    expected_path_specs = [
+        u'type: OS, location: /tmp/test/test_data/syslog\n',
+        u'type: OS, location: /tmp/test/test_data/syslog\n']
+
+    path_specs = []
+    for path_spec_object in test_collector_queue_consumer.path_specs:
+      path_specs.append(path_spec_object.comparable)
+
+    self.assertEqual(sorted(path_specs), sorted(expected_path_specs))
 
 
 if __name__ == '__main__':

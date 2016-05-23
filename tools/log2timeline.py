@@ -435,7 +435,7 @@ class Log2TimelineTool(extraction_tool.ExtractionTool):
 
     for parser_name in self._front_end.GetNamesOfParsersWithPlugins():
       plugins_information = self._front_end.GetParserPluginsInformation(
-          parser_filter_string=parser_name)
+          parser_filter_expression=parser_name)
 
       table_title = u'Parser plugins: {0:s}'.format(parser_name)
       table_view = cli_views.ViewsFactory.GetTableView(
@@ -518,7 +518,6 @@ class Log2TimelineTool(extraction_tool.ExtractionTool):
     output_group = argument_parser.add_argument_group(u'Output Arguments')
 
     self.AddOutputOptions(output_group)
-    self.AddStorageOptions(output_group)
 
     processing_group = argument_parser.add_argument_group(
         u'Processing Arguments')
@@ -728,11 +727,10 @@ class Log2TimelineTool(extraction_tool.ExtractionTool):
         filter_file=self._filter_file,
         hasher_names_string=self._hasher_names_string,
         number_of_extraction_workers=self._number_of_extraction_workers,
-        parser_filter_string=self._parser_filter_string,
+        parser_filter_expression=self._parser_filter_expression,
         preferred_encoding=self.preferred_encoding,
         single_process_mode=self._single_process_mode,
         status_update_callback=status_update_callback,
-        storage_serializer_format=self._storage_serializer_format,
         timezone=self._timezone)
 
     if processing_status and not processing_status.error_detected:

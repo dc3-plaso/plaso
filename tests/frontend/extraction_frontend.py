@@ -12,10 +12,9 @@ from plaso.frontend import extraction_frontend
 from plaso.storage import zip_file as storage_zip_file
 
 from tests import test_lib as shared_test_lib
-from tests.frontend import test_lib
 
 
-class ExtractionFrontendTests(test_lib.FrontendTestCase):
+class ExtractionFrontendTests(shared_test_lib.BaseTestCase):
   """Tests for the extraction front-end object."""
 
   def _GetTestScanNode(self, scan_context):
@@ -108,7 +107,7 @@ class ExtractionFrontendTests(test_lib.FrontendTestCase):
     source_type = dfvfs_definitions.SOURCE_TYPE_STORAGE_MEDIA_IMAGE
 
     with shared_test_lib.TempDirectory() as temp_directory:
-      storage_file_path = os.path.join(temp_directory, u'plaso.db')
+      storage_file_path = os.path.join(temp_directory, u'storage.plaso')
       test_front_end.SetStorageFile(storage_file_path)
 
       test_front_end.ProcessSources([path_spec], source_type)
@@ -150,7 +149,7 @@ class ExtractionFrontendTests(test_lib.FrontendTestCase):
   def testSetStorageFile(self):
     """Tests the SetStorageFile function."""
     test_front_end = extraction_frontend.ExtractionFrontend()
-    test_front_end.SetStorageFile(u'/tmp/test.plaso')
+    test_front_end.SetStorageFile(u'/tmp/storage.plaso')
 
   def testSetTextPrepend(self):
     """Tests the SetTextPrepend function."""

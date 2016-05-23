@@ -4,6 +4,7 @@
 
 import unittest
 
+from dfvfs.helpers import fake_file_system_builder
 from dfvfs.helpers import file_system_searcher
 from dfvfs.lib import definitions as dfvfs_definitions
 from dfvfs.path import factory as path_spec_factory
@@ -14,19 +15,19 @@ from plaso.preprocessors import manager
 from plaso.preprocessors import windows
 
 from tests import test_lib as shared_test_lib
-from tests.preprocessors import test_lib
 
 
-class WindowsSoftwareRegistryTest(test_lib.PreprocessPluginTest):
+class WindowsSoftwareRegistryTest(shared_test_lib.BaseTestCase):
   """Base class for tests that use the SOFTWARE Registry file."""
 
   def setUp(self):
     """Makes preparations before running an individual test."""
     path_attributes = {u'systemroot': u'\\Windows'}
 
-    file_system_builder = shared_test_lib.FakeFileSystemBuilder()
-    file_system_builder.AddTestFile(
-        u'/Windows/System32/config/SOFTWARE', [u'SOFTWARE'])
+    file_system_builder = fake_file_system_builder.FakeFileSystemBuilder()
+    test_file_path = self._GetTestFilePath([u'SOFTWARE'])
+    file_system_builder.AddFileReadData(
+        u'/Windows/System32/config/SOFTWARE', test_file_path)
 
     mount_point = path_spec_factory.Factory.NewPathSpec(
         dfvfs_definitions.TYPE_INDICATOR_FAKE, location=u'/')
@@ -37,16 +38,17 @@ class WindowsSoftwareRegistryTest(test_lib.PreprocessPluginTest):
         registry_file_reader=registry_file_reader)
 
 
-class WindowsSystemRegistryTest(test_lib.PreprocessPluginTest):
+class WindowsSystemRegistryTest(shared_test_lib.BaseTestCase):
   """Base class for tests that use the SYSTEM Registry file."""
 
   def setUp(self):
     """Makes preparations before running an individual test."""
     path_attributes = {u'systemroot': u'\\Windows'}
 
-    file_system_builder = shared_test_lib.FakeFileSystemBuilder()
-    file_system_builder.AddTestFile(
-        u'/Windows/System32/config/SYSTEM', [u'SYSTEM'])
+    file_system_builder = fake_file_system_builder.FakeFileSystemBuilder()
+    test_file_path = self._GetTestFilePath([u'SYSTEM'])
+    file_system_builder.AddFileReadData(
+        u'/Windows/System32/config/SYSTEM', test_file_path)
 
     mount_point = path_spec_factory.Factory.NewPathSpec(
         dfvfs_definitions.TYPE_INDICATOR_FAKE, location=u'/')
@@ -113,14 +115,14 @@ class WindowsProgramFilesX86Path(WindowsSoftwareRegistryTest):
     self.assertIsNone(path)
 
 
-class WindowsSystemRegistryPathTest(test_lib.PreprocessPluginTest):
+class WindowsSystemRegistryPathTest(shared_test_lib.BaseTestCase):
   """Tests for the Windows system Registry path preprocess plug-in object."""
 
   _FILE_DATA = b'regf'
 
   def setUp(self):
     """Makes preparations before running an individual test."""
-    file_system_builder = shared_test_lib.FakeFileSystemBuilder()
+    file_system_builder = fake_file_system_builder.FakeFileSystemBuilder()
     file_system_builder.AddFile(
         u'/Windows/System32/config/SYSTEM', self._FILE_DATA)
 
@@ -140,14 +142,14 @@ class WindowsSystemRegistryPathTest(test_lib.PreprocessPluginTest):
     self.assertEqual(path, u'\\Windows\\System32\\config')
 
 
-class WindowsSystemRootPathTest(test_lib.PreprocessPluginTest):
+class WindowsSystemRootPathTest(shared_test_lib.BaseTestCase):
   """Tests for the Windows system Root path preprocess plug-in object."""
 
   _FILE_DATA = b'regf'
 
   def setUp(self):
     """Makes preparations before running an individual test."""
-    file_system_builder = shared_test_lib.FakeFileSystemBuilder()
+    file_system_builder = fake_file_system_builder.FakeFileSystemBuilder()
     file_system_builder.AddFile(
         u'/Windows/System32/config/SYSTEM', self._FILE_DATA)
 
