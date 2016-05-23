@@ -4,7 +4,6 @@
 
 import unittest
 
-from plaso.lib import utils
 from plaso.parsers import sqlite
 # Register all plugins.
 from plaso.parsers import sqlite_plugins  # pylint: disable=unused-import

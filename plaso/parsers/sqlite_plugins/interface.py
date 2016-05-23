@@ -10,7 +10,6 @@ except ImportError:
   import sqlite3
 
 from plaso.lib import errors
-from plaso.lib import utils
 from plaso.parsers import plugins
 
 
