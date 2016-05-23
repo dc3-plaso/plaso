@@ -74,7 +74,7 @@ class SQLiteParserTest(test_lib.ParserTestCase):
       # Also, Field3 needs to be converted to unicode string because it it a
       # buffer.
       row_results.append((
-          row['Field1'], row['Field2'], utils.GetUnicodeString(row['Field3'])))
+          row['Field1'], row['Field2'], str(row['Field3'])))
 
     expected_results = [
         (u'Committed Text 1', 1, b'None'),
@@ -106,7 +106,7 @@ class SQLiteParserTest(test_lib.ParserTestCase):
       # Also, Field3 needs to be converted to unicode string because it it a
       # buffer.
       row_results.append((
-          row['Field1'], row['Field2'], utils.GetUnicodeString(row['Field3'])))
+          row['Field1'], row['Field2'], str(row['Field3'])))
 
     expected_results = [
         (u'Committed Text 1', 1, b'None'),

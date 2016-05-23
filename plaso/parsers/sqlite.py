@@ -108,6 +108,9 @@ class SQLiteDatabase(object):
 
     Args:
       wal_file_object: file-like object for the Write-Ahead Log (WAL) file.
+
+    Raises:
+      IOError: if the file-like object cannot be read.
     """
     # Create WAL file using same filename so it is available for
     # sqlite3.connect()
@@ -344,7 +347,8 @@ class SQLiteParser(interface.FileEntryParser):
     try:
       database.Open(file_object)
 
-      # Seek file_object to 0 so we can re-open the database with WAL file.
+      # Reset file_object offset to 0 so we can re-open the database with the
+      # WAL file.
       file_object.seek(0)
 
       # Open second database with WAL file if available.

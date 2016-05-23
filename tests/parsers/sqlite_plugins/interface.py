@@ -41,7 +41,7 @@ class BogusSQLitePlugin(interface.SQLitePlugin):
     # Also, Field3 needs to be converted to unicode string because it it a
     # buffer.
     self.results.append((
-        (row['Field1'], row['Field2'], utils.GetUnicodeString(row['Field3'])),
+        (row['Field1'], row['Field2'], str(row['Field3'])),
         from_wal))
 
 

@@ -28,8 +28,8 @@ class SQLitePlugin(plugins.BasePlugin):
   # List of tables that should be present in the database, for verification.
   REQUIRED_TABLES = frozenset([])
 
-  @staticmethod
-  def _HashSQLiteRow(row):
+  @classmethod
+  def _HashSQLiteRow(cls, row):
     """Hashes the given SQLite row.
 
     Args:
@@ -41,9 +41,9 @@ class SQLitePlugin(plugins.BasePlugin):
     hash_value = 0
     for column_value in row:
       # Blobs are buffers and will cause a "writable buffers are not hashable"
-      # error if we try to hash it. Therefore, we will turn it into unicode.
+      # error if we try to hash it. Therefore, we will turn it into a string.
       if isinstance(column_value, buffer):
-        column_value = utils.GetUnicodeString(column_value)
+        column_value = str(column_value)
       hash_value ^= hash(column_value)
     return hash_value
 

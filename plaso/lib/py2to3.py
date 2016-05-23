@@ -3,9 +3,8 @@
 
 import sys
 
-PYTHON2 = sys.version_info[0] < 3
 
-if PYTHON2:
+if sys.version_info[0] < 3:
   BYTES_TYPE = str
   INTEGER_TYPES = (int, long)
   LONG_TYPE = long
