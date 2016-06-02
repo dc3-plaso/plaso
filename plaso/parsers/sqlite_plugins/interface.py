@@ -2,6 +2,7 @@
 """This file contains a SQLite parser."""
 
 import logging
+import sys
 
 # pylint: disable=wrong-import-order
 try:
@@ -39,9 +40,10 @@ class SQLitePlugin(plugins.BasePlugin):
     """
     hash_value = 0
     for column_value in row:
-      # Blobs are buffers and will cause a "writable buffers are not hashable"
-      # error if we try to hash it. Therefore, we will turn it into a string.
-      if isinstance(column_value, buffer):
+      # In Python 2, blobs are "read-write buffer" and will cause a
+      # "writable buffers are not hashable" error if we try to hash it.
+      # Therefore, we will turn it into a string beforehand.
+      if sys.version_info[0] < 3 and isinstance(column_value, buffer):
         column_value = str(column_value)
       hash_value ^= hash(column_value)
     return hash_value

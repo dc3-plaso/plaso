@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """Tests for the SQLite database parser."""
 
+import sys
 import unittest
 
 from plaso.parsers import sqlite
@@ -51,10 +52,13 @@ class SQLiteParserTest(test_lib.ParserTestCase):
     for row in database.Query(u'SELECT * FROM MyTable'):
       # Note that pysqlite does not accept a Unicode string in row['string'] and
       # will raise "IndexError: Index must be int or string".
-      # Also, Field3 needs to be converted to unicode string because it it a
-      # buffer.
+      # Also, Field3 needs to be converted to a string if Python 2 is used
+      # because it is a read-write buffer.
+      field3 = row['Field3']
+      if sys.version_info[0] < 3:
+        field3 = str(field3)
       row_results.append((
-          row['Field1'], row['Field2'], str(row['Field3'])))
+          row['Field1'], row['Field2'], field3))
 
     expected_results = [
         (u'Committed Text 1', 1, b'None'),
@@ -83,10 +87,13 @@ class SQLiteParserTest(test_lib.ParserTestCase):
     for row in database.Query(u'SELECT * FROM MyTable'):
       # Note that pysqlite does not accept a Unicode string in row['string'] and
       # will raise "IndexError: Index must be int or string".
-      # Also, Field3 needs to be converted to unicode string because it it a
-      # buffer.
+      # Also, Field3 needs to be converted to a string if Python 2 is used
+      # because it is a read-write buffer.
+      field3 = row['Field3']
+      if sys.version_info[0] < 3:
+        field3 = str(field3)
       row_results.append((
-          row['Field1'], row['Field2'], str(row['Field3'])))
+          row['Field1'], row['Field2'], field3))
 
     expected_results = [
         (u'Committed Text 1', 1, b'None'),
