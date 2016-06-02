@@ -27,6 +27,7 @@ from plaso.formatters import ganalytics
 from plaso.formatters import gdrive
 from plaso.formatters import hachoir
 from plaso.formatters import iis
+from plaso.formatters import imessage
 from plaso.formatters import ipod
 from plaso.formatters import java_idx
 from plaso.formatters import kik_ios
@@ -81,3 +82,4 @@ from plaso.formatters import winrestore
 from plaso.formatters import xchatlog
 from plaso.formatters import xchatscrollback
 from plaso.formatters import zeitgeist
+from plaso.formatters import zsh_extended_history
